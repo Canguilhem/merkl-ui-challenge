@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Opps
 
-## Getting Started
+SSR opportunity browser over Merkl’s public API. Local BFF + shared Next.js data cache.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App: [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What you get
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- SSR list (`/`) and detail (`/opportunities/[id]`)
+- BFF: `GET /api/opportunities`, `GET /api/opportunities/:id`
+- Filters: chain, status, action, asset, token type, TVL / APR / daily ranges, search
+- Sort: APR, TVL, Daily (Merkl `sort` / `order`)
+- Desktop table + mobile cards; preview dialog on row/card click
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+```text
+Browser
+  ├─ SSR pages  → lib/merkl/client.ts → api.merkl.xyz/v4
+  └─ /api/*     → lib/merkl/client.ts ─┘
+                        │
+                  "use cache" + cacheLife
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Pages and route handlers share `getOpportunities` / `getOpportunity` / `getChains`, so the same cache keys cover SSR and the BFF.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`Cache-Control: s-maxage=60` on API responses is a CDN hint. Locally, caching is the Next data cache (`cacheLife("minutes")`).
 
-## Deploy on Vercel
+## API examples
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+On the list page, **Open API JSON** (top right) opens the BFF for the current filters in a new tab. Same thing with curl:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+curl "http://localhost:3000/api/opportunities?status=LIVE&items=5"
+curl "http://localhost:3000/api/opportunities?status=LIVE&minimumTvl=1&sort=tvl&order=desc"
+```
+
+List query params: `page`, `items`, `chainId`, `status`, `action`, `minimumTvl`, `maximumTvl`, `minimumApr`, `maximumApr`, `minimumDailyRewards`, `maximumDailyRewards`, `asset`, `tokenTypes`, `search`, `sort`, `order`.
+
+Merkl (`api.merkl.xyz`) is fetched only on the server. Browser Network shows `/api/...` when you hit the BFF, not Merkl directly.
+
+## Layout
+
+```text
+app/page.tsx                      # list SSR
+app/opportunities/[id]/page.tsx   # detail SSR
+app/api/opportunities/            # BFF
+lib/merkl/client.ts               # Merkl fetch + cache
+lib/merkl/types.ts
+lib/merkl/constants.ts
+components/                       # UI
+```
+
+## Notes
+
+- Merkl list responses don’t expose a total hit count; pagination uses “full page ⇒ maybe next”.
+- Ends is display-only (no Merkl sort for campaign end).
+- No Docker / CI / deploy in this repo.
