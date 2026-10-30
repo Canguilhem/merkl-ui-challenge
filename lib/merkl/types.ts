@@ -1,3 +1,5 @@
+import type { ListQuery } from "@/lib/merkl/query";
+
 export type OpportunityStatus = "LIVE" | "PAST" | "SOON";
 
 export type OpportunityAction =
@@ -108,44 +110,17 @@ export type Opportunity = {
   liveCampaigns?: number;
 };
 
-export type OpportunitySort =
-  | "apr"
-  | "tvl"
-  | "rewards"
-  | "maxDailyRewards";
-
-export type OpportunityListParams = {
-  page?: number;
-  items?: number;
-  /** Comma-separated chain ids (Merkl multi-filter). */
-  chainId?: string;
-  /** Comma-separated statuses: LIVE,SOON,PAST. */
-  status?: string;
-  /** Comma-separated actions. */
-  action?: string;
-  minimumTvl?: string;
-  maximumTvl?: string;
-  minimumApr?: string;
-  maximumApr?: string;
-  minimumDailyRewards?: string;
-  maximumDailyRewards?: string;
-  search?: string;
-  /** Comma-separated UI shorthand: stablecoin,eth,btc */
-  asset?: string;
-  /** Comma-separated Merkl tokenTypes: POINT,PRETGE */
-  tokenTypes?: string;
-  sort?: OpportunitySort | string;
-  order?: "asc" | "desc" | string;
-};
-
 export type OpportunityListResult = {
   data: Opportunity[];
   meta: {
     page: number;
     items: number;
+    /** Rows on this page. */
     count: number;
+    /** Rows matching the filters, or null if the Merkl count call failed. */
+    total: number | null;
     source: "merkl";
-    filters: OpportunityListParams;
+    filters: ListQuery;
     /** Full Merkl URL used for this response (server-side). */
     upstreamUrl: string;
     /** Matching local BFF path for browser Network inspection. */

@@ -1,45 +1,40 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { hasNextPage, listHref, type ListQuery } from "@/lib/merkl/query";
 
-export function buildPageHref(
-  page: number,
-  params: Record<string, string | undefined>,
-) {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (!value) continue;
-    search.set(key, value);
-  }
-  if (page > 0) search.set("page", String(page));
-  const query = search.toString();
-  return query ? `/?${query}` : "/";
-}
+export type PaginationProps = {
+  page: number;
+  pageSize: number;
+  count: number;
+  total: number | null;
+  query: ListQuery;
+};
 
 export function Pagination({
   page,
   pageSize,
   count,
-  params,
+  total,
+  query,
   className = "",
-}: {
-  page: number;
-  pageSize: number;
-  count: number;
-  params: Record<string, string | undefined>;
+}: PaginationProps & {
   className?: string;
 }) {
   const hasPrev = page > 0;
-  const hasNext = count >= pageSize;
+  const hasNext = hasNextPage({ page, pageSize, count, total });
 
   if (!hasPrev && !hasNext) return null;
 
   return (
     <div className={`flex items-center justify-between gap-3 ${className}`}>
-      <p className="text-xs text-muted-foreground">Page {page + 1}</p>
+      <p className="text-xs text-muted-foreground">
+        Page {page + 1}
+        {total != null ? ` of ${Math.max(1, Math.ceil(total / pageSize))}` : ""}
+      </p>
       <div className="flex gap-1.5">
         {hasPrev ? (
           <Link
-            href={buildPageHref(page - 1, params)}
+            href={listHref({ ...query, page: page - 1 })}
             className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground/85 hover:bg-muted"
           >
             Previous
@@ -51,7 +46,7 @@ export function Pagination({
         )}
         {hasNext ? (
           <Link
-            href={buildPageHref(page + 1, params)}
+            href={listHref({ ...query, page: page + 1 })}
             className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground/85 hover:bg-muted"
           >
             Next
@@ -71,21 +66,17 @@ export function PaginationControls({
   page,
   pageSize,
   count,
-  params,
-}: {
-  page: number;
-  pageSize: number;
-  count: number;
-  params: Record<string, string | undefined>;
-}) {
+  total,
+  query,
+}: PaginationProps) {
   const hasPrev = page > 0;
-  const hasNext = count >= pageSize;
+  const hasNext = hasNextPage({ page, pageSize, count, total });
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       {hasPrev ? (
         <Link
-          href={buildPageHref(page - 1, params)}
+          href={listHref({ ...query, page: page - 1 })}
           aria-label="Previous page"
           className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground/85 active:bg-muted"
         >
@@ -104,7 +95,7 @@ export function PaginationControls({
       </span>
       {hasNext ? (
         <Link
-          href={buildPageHref(page + 1, params)}
+          href={listHref({ ...query, page: page + 1 })}
           aria-label="Next page"
           className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground/85 active:bg-muted"
         >

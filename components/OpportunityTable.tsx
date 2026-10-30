@@ -9,7 +9,7 @@ import {
   type Updater,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AssetIcon } from "@/components/AssetIcon";
 import { CellTip } from "@/components/CellTip";
@@ -31,12 +31,8 @@ import {
   formatUsd,
   remainingCampaignDays,
 } from "@/lib/format";
-import {
-  DEFAULT_ORDER,
-  DEFAULT_SORT,
-  fromMerklSort,
-  toMerklSort,
-} from "@/lib/merkl/constants";
+import { DEFAULT_ORDER, DEFAULT_SORT } from "@/lib/merkl/constants";
+import { listHref, parseListQuery } from "@/lib/merkl/query";
 import type { Opportunity } from "@/lib/merkl/types";
 import { useNow } from "@/lib/use-now";
 
@@ -92,7 +88,6 @@ export function OpportunityTable({
   order?: string;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [preview, setPreview] = useState<Opportunity | null>(null);
 
@@ -210,7 +205,7 @@ export function OpportunityTable({
   const sorting = useMemo<SortingState>(
     () => [
       {
-        id: fromMerklSort(sort),
+        id: sort,
         desc: order !== "asc",
       },
     ],
@@ -219,20 +214,16 @@ export function OpportunityTable({
 
   const onSortingChange = (updater: Updater<SortingState>) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("page");
-
     const active = next[0];
-    if (active) {
-      params.set("sort", toMerklSort(active.id));
-      params.set("order", active.desc ? "desc" : "asc");
-    } else {
-      params.set("sort", DEFAULT_SORT);
-      params.set("order", DEFAULT_ORDER);
-    }
 
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.push(
+      listHref({
+        ...parseListQuery(new URLSearchParams(searchParams.toString())),
+        sort: active?.id ?? DEFAULT_SORT,
+        order: active ? (active.desc ? "desc" : "asc") : DEFAULT_ORDER,
+        page: 0,
+      }),
+    );
   };
 
   const table = useTable({

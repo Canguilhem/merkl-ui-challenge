@@ -1,12 +1,6 @@
 "use client";
 
-function parseCsv(value: string | undefined) {
-  if (!value) return [] as string[];
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
+import { parseCsv } from "@/lib/merkl/query";
 
 export function ToggleBadges({
   value,

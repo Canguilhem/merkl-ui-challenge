@@ -6,8 +6,9 @@ type RouteContext = {
 };
 
 export async function GET(_request: Request, context: RouteContext) {
+  const { id } = await context.params;
+
   try {
-    const { id } = await context.params;
     const opportunity = await getOpportunity(id);
 
     if (!opportunity) {
@@ -17,7 +18,7 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
-    // CDN hint; local caching is cacheLife in getOpportunity().
+    // CDN hint; local caching is cacheLife in lib/merkl/client.ts.
     return NextResponse.json(
       { data: opportunity },
       {
@@ -27,8 +28,10 @@ export async function GET(_request: Request, context: RouteContext) {
       },
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to fetch opportunity";
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error("Failed to fetch opportunity", error);
+    return NextResponse.json(
+      { error: "Failed to fetch opportunity from Merkl" },
+      { status: 502 },
+    );
   }
 }

@@ -2,7 +2,7 @@
 
 import { ListFilter, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -14,7 +14,7 @@ import { AssetIcon } from "@/components/AssetIcon";
 import { AssetTypeBadges } from "@/components/AssetTypeBadges";
 import { FilterSelect } from "@/components/FilterSelect";
 import { MetricRangeFilter } from "@/components/MetricRangeFilter";
-import { PaginationControls } from "@/components/Pagination";
+import { PaginationControls, type PaginationProps } from "@/components/Pagination";
 import { ToggleBadges } from "@/components/ToggleBadges";
 import { TvlRangeFilter } from "@/components/TvlRangeFilter";
 import { Button } from "@/components/ui/button";
@@ -43,37 +43,19 @@ import {
   OPPORTUNITY_ACTIONS,
   OPPORTUNITY_STATUSES,
 } from "@/lib/merkl/constants";
+import {
+  ALL_STATUSES,
+  DEFAULT_STATUS,
+  listHref,
+  parseCsv,
+  type OpportunityFilterValues,
+} from "@/lib/merkl/query";
 import type { MerklChain } from "@/lib/merkl/types";
-
-export type MobilePaginationProps = {
-  page: number;
-  pageSize: number;
-  count: number;
-  params: Record<string, string | undefined>;
-};
-
-export type OpportunityFilterValues = {
-  chainId?: string;
-  status?: string;
-  action?: string;
-  minimumTvl?: string;
-  maximumTvl?: string;
-  minimumApr?: string;
-  maximumApr?: string;
-  minimumDailyRewards?: string;
-  maximumDailyRewards?: string;
-  asset?: string;
-  tokenTypes?: string;
-  search?: string;
-  sort?: string;
-  order?: string;
-};
 
 const searchInputClass =
   "h-8 rounded-md border border-border bg-muted/40 px-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/25";
 
 const SEARCH_DEBOUNCE_MS = 350;
-const ALL_STATUSES = OPPORTUNITY_STATUSES.join(",");
 const FILTERS_OPEN_KEY = "merkl-filters-open";
 
 const sidebarListeners = new Set<() => void>();
@@ -110,40 +92,8 @@ function writeSidebarOpen(open: boolean) {
   sidebarListeners.forEach((listener) => listener());
 }
 
-function parseCsv(value: string | undefined) {
-  if (!value) return [] as string[];
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function toQuery(values: OpportunityFilterValues) {
-  const params = new URLSearchParams();
-  if (values.search?.trim()) params.set("search", values.search.trim());
-  if (values.chainId) params.set("chainId", values.chainId);
-  if (values.status) params.set("status", values.status);
-  if (values.action) params.set("action", values.action);
-  if (values.minimumTvl) params.set("minimumTvl", values.minimumTvl);
-  if (values.maximumTvl) params.set("maximumTvl", values.maximumTvl);
-  if (values.minimumApr) params.set("minimumApr", values.minimumApr);
-  if (values.maximumApr) params.set("maximumApr", values.maximumApr);
-  if (values.minimumDailyRewards) {
-    params.set("minimumDailyRewards", values.minimumDailyRewards);
-  }
-  if (values.maximumDailyRewards) {
-    params.set("maximumDailyRewards", values.maximumDailyRewards);
-  }
-  if (values.asset) params.set("asset", values.asset);
-  if (values.tokenTypes) params.set("tokenTypes", values.tokenTypes);
-  if (values.sort) params.set("sort", values.sort);
-  if (values.order) params.set("order", values.order);
-  return params.toString();
-}
-
 function isDefaultLiveStatus(status: string | undefined) {
-  const statuses = parseCsv(status);
-  return statuses.length === 1 && statuses[0] === "LIVE";
+  return status === DEFAULT_STATUS;
 }
 
 function countActiveFilters(values: OpportunityFilterValues) {
@@ -289,18 +239,12 @@ function ActiveChips({
 
   if (chips.length === 0) return null;
 
-  const clearHref = (clear: Partial<OpportunityFilterValues>) => {
-    const next: OpportunityFilterValues = { ...values, ...clear };
-    const query = toQuery(next);
-    return query ? `/?${query}` : "/";
-  };
-
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {chips.map((chip) => (
         <Link
           key={chip.key}
-          href={clearHref(chip.clear)}
+          href={listHref({ ...values, ...chip.clear })}
           className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-0.5 pr-2 pl-1 text-[11px] font-medium text-muted-foreground transition hover:border-border hover:text-foreground"
           title={`Clear ${chip.label}`}
         >
@@ -491,11 +435,10 @@ export function OpportunityFilters({
 }: {
   chains: MerklChain[];
   values: OpportunityFilterValues;
-  pagination?: MobilePaginationProps;
+  pagination?: PaginationProps;
   children: ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
   const sidebarOpen = useSyncExternalStore(
     subscribeSidebarOpen,
@@ -541,8 +484,8 @@ export function OpportunityFilters({
   );
 
   const push = (patch: Partial<OpportunityFilterValues>) => {
-    const query = toQuery({ ...values, ...patch });
-    router.push(query ? `${pathname}?${query}` : pathname);
+    // Any filter change restarts from the first page.
+    router.push(listHref({ ...values, ...patch, page: 0 }));
   };
 
   useEffect(() => {

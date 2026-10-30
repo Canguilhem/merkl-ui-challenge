@@ -2,6 +2,7 @@ type RequestInspectorProps = {
   localApiPath: string;
   upstreamUrl: string;
   count: number;
+  total: number | null;
   sort?: string;
 };
 
@@ -9,6 +10,7 @@ export function RequestInspector({
   localApiPath,
   upstreamUrl,
   count,
+  total,
   sort,
 }: RequestInspectorProps) {
   let upstreamPath = upstreamUrl;
@@ -22,7 +24,9 @@ export function RequestInspector({
   return (
     <div className="flex w-full flex-col gap-1 text-xs text-muted-foreground sm:w-auto sm:items-end">
       <p className="tabular-nums">
-        {count} on this page
+        {total != null
+          ? `${total.toLocaleString("en-US")} opportunities`
+          : `${count} on this page`}
         {sort ? ` · sorted by ${sort}` : ""}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">

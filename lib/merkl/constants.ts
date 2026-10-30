@@ -57,34 +57,6 @@ export const ASSET_TO_MERKL: Record<
   btc: { tokens: "BTC,WBTC,cbBTC,tBTC" },
 };
 
-/** Resolve one or more UI asset keys (`stablecoin,eth`) into Merkl params. */
-export function resolveAssetParams(asset: string | undefined) {
-  const selected = (asset ?? "")
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part): part is AssetFilterValue =>
-      part === "stablecoin" || part === "eth" || part === "btc",
-    );
-
-  if (selected.length === 0) return {};
-
-  let stablecoin = false;
-  const tokens = new Set<string>();
-
-  for (const key of selected) {
-    const mapped = ASSET_TO_MERKL[key];
-    if (mapped.stablecoin) stablecoin = true;
-    if (mapped.tokens) {
-      for (const symbol of mapped.tokens.split(",")) tokens.add(symbol);
-    }
-  }
-
-  return {
-    ...(stablecoin ? { stablecoin: true as const } : {}),
-    ...(tokens.size > 0 ? { tokens: [...tokens].join(",") } : {}),
-  };
-}
-
 /** Merkl mins just above 0 — exclude empty metrics without a coarse floor. */
 export const ZERO_FLOOR_TVL = 1;
 export const ZERO_FLOOR_APR = 0.01;
@@ -284,12 +256,7 @@ export function formatDailyRewardsRangeLabel(
   return `Daily ${formatDailyRewardsBound(minIndex === -1 ? 0 : minIndex, "min")}–${formatDailyRewardsBound(maxIndex, "max")}`;
 }
 
-export function toMerklSort(columnId: string): string {
-  if (columnId === "dailyRewards") return "rewards";
-  return columnId;
-}
-
-export function fromMerklSort(sort: string | undefined): string {
+function fromMerklSort(sort: string | undefined): string {
   if (sort === "rewards") return "dailyRewards";
   return sort || DEFAULT_SORT;
 }

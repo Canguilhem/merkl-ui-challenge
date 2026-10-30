@@ -2,20 +2,13 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { AssetIcon } from "@/components/AssetIcon";
+import { parseCsv } from "@/lib/merkl/query";
 
 export type FilterSelectOption = {
   value: string;
   label: string;
   icon?: string | null;
 };
-
-function parseCsv(value: string | undefined) {
-  if (!value) return [] as string[];
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
 
 function joinCsv(values: string[]) {
   return values.join(",");
