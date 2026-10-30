@@ -109,7 +109,7 @@ function countActiveFilters(values: OpportunityFilterValues) {
   if (values.minimumTvl || values.maximumTvl) count += 1;
   if (values.minimumApr || values.maximumApr) count += 1;
   if (values.minimumDailyRewards || values.maximumDailyRewards) count += 1;
-  count += parseCsv(values.asset).length;
+  if (values.asset) count += 1;
   count += parseCsv(values.tokenTypes).length;
   return count;
 }
@@ -180,13 +180,12 @@ function ActiveChips({
     });
   }
 
-  for (const asset of parseCsv(values.asset)) {
-    const meta = ASSET_FILTERS.find((item) => item.value === asset);
-    const remaining = parseCsv(values.asset).filter((item) => item !== asset);
+  if (values.asset) {
+    const meta = ASSET_FILTERS.find((item) => item.value === values.asset);
     chips.push({
-      key: `asset-${asset}`,
-      label: meta?.label ?? asset,
-      clear: { asset: remaining.length ? remaining.join(",") : undefined },
+      key: `asset-${values.asset}`,
+      label: meta?.label ?? values.asset,
+      clear: { asset: undefined },
     });
   }
 
