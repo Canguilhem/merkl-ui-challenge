@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ListNavigationProvider } from "@/components/ListNavigation";
 import { OpportunityFilters } from "@/components/OpportunityFilters";
 import { OpportunityList } from "@/components/OpportunityList";
 import { Pagination } from "@/components/Pagination";
@@ -32,7 +33,7 @@ async function OpportunityResults({
   };
 
   return (
-    <>
+    <ListNavigationProvider>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           Opportunities
@@ -74,7 +75,7 @@ async function OpportunityResults({
           <Pagination {...pagination} className="hidden md:flex" />
         </OpportunityFilters>
       </div>
-    </>
+    </ListNavigationProvider>
   );
 }
 

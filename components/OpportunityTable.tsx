@@ -9,10 +9,11 @@ import {
   type Updater,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AssetIcon } from "@/components/AssetIcon";
 import { CellTip } from "@/components/CellTip";
+import { useListNavigation } from "@/components/ListNavigation";
 import { OpportunityPreviewDialog } from "@/components/OpportunityPreviewDialog";
 import { RewardTokenStack } from "@/components/RewardTokenStack";
 import {
@@ -87,7 +88,7 @@ export function OpportunityTable({
   sort?: string;
   order?: string;
 }) {
-  const router = useRouter();
+  const { navigate } = useListNavigation();
   const searchParams = useSearchParams();
   const [preview, setPreview] = useState<Opportunity | null>(null);
 
@@ -216,7 +217,7 @@ export function OpportunityTable({
     const next = typeof updater === "function" ? updater(sorting) : updater;
     const active = next[0];
 
-    router.push(
+    navigate(
       listHref({
         ...parseListQuery(new URLSearchParams(searchParams.toString())),
         sort: active?.id ?? DEFAULT_SORT,

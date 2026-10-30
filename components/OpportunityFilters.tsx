@@ -1,8 +1,6 @@
 "use client";
 
 import { ListFilter, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -13,6 +11,11 @@ import {
 import { AssetIcon } from "@/components/AssetIcon";
 import { AssetTypeBadges } from "@/components/AssetTypeBadges";
 import { FilterSelect } from "@/components/FilterSelect";
+import {
+  ListLink,
+  ListResults,
+  useListNavigation,
+} from "@/components/ListNavigation";
 import { MetricRangeFilter } from "@/components/MetricRangeFilter";
 import { PaginationControls, type PaginationProps } from "@/components/Pagination";
 import { ToggleBadges } from "@/components/ToggleBadges";
@@ -241,7 +244,7 @@ function ActiveChips({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {chips.map((chip) => (
-        <Link
+        <ListLink
           key={chip.key}
           href={listHref({ ...values, ...chip.clear })}
           className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-0.5 pr-2 pl-1 text-[11px] font-medium text-muted-foreground transition hover:border-border hover:text-foreground"
@@ -257,7 +260,7 @@ function ActiveChips({
           ) : null}
           <span>{chip.label}</span>
           <span className="text-muted-foreground/60 group-hover:text-muted-foreground">×</span>
-        </Link>
+        </ListLink>
       ))}
     </div>
   );
@@ -437,7 +440,7 @@ export function OpportunityFilters({
   pagination?: PaginationProps;
   children: ReactNode;
 }) {
-  const router = useRouter();
+  const { navigate } = useListNavigation();
   const [sheetOpen, setSheetOpen] = useState(false);
   const sidebarOpen = useSyncExternalStore(
     subscribeSidebarOpen,
@@ -484,7 +487,7 @@ export function OpportunityFilters({
 
   const push = (patch: Partial<OpportunityFilterValues>) => {
     // Any filter change restarts from the first page.
-    router.push(listHref({ ...values, ...patch, page: 0 }));
+    navigate(listHref({ ...values, ...patch, page: 0 }));
   };
 
   useEffect(() => {
@@ -525,12 +528,12 @@ export function OpportunityFilters({
             <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
               <h2 className="text-sm font-semibold text-foreground">Filters</h2>
               <div className="flex items-center gap-1">
-                <Link
+                <ListLink
                   href="/"
                   className="cursor-pointer rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
                   Reset
-                </Link>
+                </ListLink>
                 <Button
                   type="button"
                   variant="ghost"
@@ -585,7 +588,7 @@ export function OpportunityFilters({
           <ActiveChips values={values} chains={chains} />
         </div>
 
-        {children}
+        <ListResults>{children}</ListResults>
       </div>
 
       {/* Mobile sticky chrome: search, filters, pagination */}
@@ -621,9 +624,9 @@ export function OpportunityFilters({
               <div className="flex-1 overflow-y-auto p-4">{filterFields}</div>
               <SheetFooter className="border-t border-border sm:flex-row">
                 <Button variant="outline" asChild className="flex-1">
-                  <Link href="/" onClick={() => setSheetOpen(false)}>
+                  <ListLink href="/" onClick={() => setSheetOpen(false)}>
                     Reset
-                  </Link>
+                  </ListLink>
                 </Button>
                 <SheetClose asChild>
                   <Button type="button" className="flex-1">

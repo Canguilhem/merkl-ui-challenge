@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ListLink } from "@/components/ListNavigation";
 import { hasNextPage, listHref, type ListQuery } from "@/lib/merkl/query";
 
 export type PaginationProps = {
@@ -33,24 +33,24 @@ export function Pagination({
       </p>
       <div className="flex gap-1.5">
         {hasPrev ? (
-          <Link
+          <ListLink
             href={listHref({ ...query, page: page - 1 })}
             className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground/85 hover:bg-muted"
           >
             Previous
-          </Link>
+          </ListLink>
         ) : (
           <span className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs text-muted-foreground/60">
             Previous
           </span>
         )}
         {hasNext ? (
-          <Link
+          <ListLink
             href={listHref({ ...query, page: page + 1 })}
             className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground/85 hover:bg-muted"
           >
             Next
-          </Link>
+          </ListLink>
         ) : (
           <span className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs text-muted-foreground/60">
             Next
@@ -75,13 +75,13 @@ export function PaginationControls({
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       {hasPrev ? (
-        <Link
+        <ListLink
           href={listHref({ ...query, page: page - 1 })}
           aria-label="Previous page"
           className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground/85 active:bg-muted"
         >
           <ChevronLeft className="size-4" />
-        </Link>
+        </ListLink>
       ) : (
         <span
           aria-disabled
@@ -94,13 +94,13 @@ export function PaginationControls({
         {page + 1}
       </span>
       {hasNext ? (
-        <Link
+        <ListLink
           href={listHref({ ...query, page: page + 1 })}
           aria-label="Next page"
           className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground/85 active:bg-muted"
         >
           <ChevronRight className="size-4" />
-        </Link>
+        </ListLink>
       ) : (
         <span
           aria-disabled
