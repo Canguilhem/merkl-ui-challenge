@@ -15,9 +15,11 @@ import {
   remainingCampaignDays,
 } from "@/lib/format";
 import type { Opportunity } from "@/lib/merkl/types";
+import { useNow } from "@/lib/use-now";
 
 export function OpportunityCards({ data }: { data: Opportunity[] }) {
   const [preview, setPreview] = useState<Opportunity | null>(null);
+  const now = useNow();
 
   return (
     <>
@@ -28,7 +30,7 @@ export function OpportunityCards({ data }: { data: Opportunity[] }) {
             opportunity.chain?.name ?? String(opportunity.chainId);
           const days = remainingCampaignDays(
             opportunity.latestCampaignEnd,
-            Date.now(),
+            now,
           );
           const per1k = dailyRewardsPer1k({
             dailyRewards: opportunity.dailyRewards,

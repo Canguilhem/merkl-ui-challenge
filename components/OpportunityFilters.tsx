@@ -3,7 +3,13 @@
 import { ListFilter, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { AssetIcon } from "@/components/AssetIcon";
 import { AssetTypeBadges } from "@/components/AssetTypeBadges";
 import { FilterSelect } from "@/components/FilterSelect";
@@ -69,6 +75,40 @@ const searchInputClass =
 const SEARCH_DEBOUNCE_MS = 350;
 const ALL_STATUSES = OPPORTUNITY_STATUSES.join(",");
 const FILTERS_OPEN_KEY = "merkl-filters-open";
+
+const sidebarListeners = new Set<() => void>();
+// Last value set this session, so the toggle still works when storage is blocked.
+let sidebarOpenOverride: boolean | null = null;
+
+function subscribeSidebarOpen(listener: () => void) {
+  sidebarListeners.add(listener);
+  return () => {
+    sidebarListeners.delete(listener);
+  };
+}
+
+function readSidebarOpen() {
+  if (sidebarOpenOverride !== null) return sidebarOpenOverride;
+  try {
+    return window.localStorage.getItem(FILTERS_OPEN_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function readServerSidebarOpen() {
+  return true;
+}
+
+function writeSidebarOpen(open: boolean) {
+  sidebarOpenOverride = open;
+  try {
+    window.localStorage.setItem(FILTERS_OPEN_KEY, open ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  sidebarListeners.forEach((listener) => listener());
+}
 
 function parseCsv(value: string | undefined) {
   if (!value) return [] as string[];
@@ -457,25 +497,12 @@ export function OpportunityFilters({
   const router = useRouter();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(FILTERS_OPEN_KEY);
-      if (stored === "0") setSidebarOpen(false);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const setFiltersOpen = (open: boolean) => {
-    setSidebarOpen(open);
-    try {
-      window.localStorage.setItem(FILTERS_OPEN_KEY, open ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  };
+  const sidebarOpen = useSyncExternalStore(
+    subscribeSidebarOpen,
+    readSidebarOpen,
+    readServerSidebarOpen,
+  );
+  const setFiltersOpen = writeSidebarOpen;
 
   const [search, setSearch] = useState(values.search ?? "");
   const [urlSearch, setUrlSearch] = useState(values.search ?? "");

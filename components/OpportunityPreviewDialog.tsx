@@ -27,6 +27,7 @@ import {
   remainingCampaignDays,
 } from "@/lib/format";
 import type { Opportunity } from "@/lib/merkl/types";
+import { useNow } from "@/lib/use-now";
 
 export function OpportunityPreviewDialog({
   opportunity,
@@ -37,13 +38,15 @@ export function OpportunityPreviewDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const now = useNow();
+
   if (!opportunity) return null;
 
   const protocolLabel = opportunity.protocol?.name ?? "Unknown";
   const chainName = opportunity.chain?.name ?? String(opportunity.chainId);
   const days = remainingCampaignDays(
     opportunity.latestCampaignEnd,
-    Date.now(),
+    now,
   );
   const per1k = dailyRewardsPer1k({
     dailyRewards: opportunity.dailyRewards,

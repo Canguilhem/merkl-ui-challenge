@@ -38,6 +38,7 @@ import {
   toMerklSort,
 } from "@/lib/merkl/constants";
 import type { Opportunity } from "@/lib/merkl/types";
+import { useNow } from "@/lib/use-now";
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -58,6 +59,28 @@ function SortIndicator({ sorted }: { sorted: false | "asc" | "desc" }) {
 }
 
 const NUMERIC_IDS = new Set(["apr", "tvl", "dailyRewards", "endsIn"]);
+
+function EndsCell({ opportunity }: { opportunity: Opportunity }) {
+  const days = remainingCampaignDays(opportunity.latestCampaignEnd, useNow());
+  const label = formatRemainingDays(days);
+  const tone =
+    days == null
+      ? "text-muted-foreground"
+      : days < 0
+        ? "text-muted-foreground"
+        : days <= 7
+          ? "text-warning"
+          : "text-foreground/85";
+  return (
+    <CellTip tip={endsCellInfo(opportunity)} align="end">
+      <span
+        className={`block text-right font-mono text-sm font-medium tabular-nums ${tone}`}
+      >
+        {label}
+      </span>
+    </CellTip>
+  );
+}
 
 export function OpportunityTable({
   data,
@@ -174,39 +197,12 @@ export function OpportunityTable({
             );
           },
         }),
-        columnHelper.accessor(
-          (row) =>
-            remainingCampaignDays(row.latestCampaignEnd, Date.now()) ?? 99999,
-          {
-            id: "endsIn",
-            header: "Ends",
-            enableSorting: false,
-            cell: ({ row }) => {
-              const days = remainingCampaignDays(
-                row.original.latestCampaignEnd,
-                Date.now(),
-              );
-              const label = formatRemainingDays(days);
-              const tone =
-                days == null
-                  ? "text-muted-foreground"
-                  : days < 0
-                    ? "text-muted-foreground"
-                    : days <= 7
-                      ? "text-warning"
-                      : "text-foreground/85";
-              return (
-                <CellTip tip={endsCellInfo(row.original)} align="end">
-                  <span
-                    className={`block text-right font-mono text-sm font-medium tabular-nums ${tone}`}
-                  >
-                    {label}
-                  </span>
-                </CellTip>
-              );
-            },
-          },
-        ),
+        columnHelper.accessor((row) => row.latestCampaignEnd, {
+          id: "endsIn",
+          header: "Ends",
+          enableSorting: false,
+          cell: ({ row }) => <EndsCell opportunity={row.original} />,
+        }),
       ]),
     [],
   );

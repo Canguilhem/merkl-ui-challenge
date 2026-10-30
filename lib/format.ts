@@ -89,14 +89,14 @@ export function parseMerklUnix(value: string | number | null | undefined) {
 
 /**
  * Remaining whole days until campaign end.
- * Pass `nowMs` from the caller — RSC must not call `Date.now()` during prerender.
+ * Pass `nowMs` from `useNow`; it is null until the client knows the time.
  */
 export function remainingCampaignDays(
-  latestCampaignEnd?: string | number | null,
-  nowMs: number = 0,
+  latestCampaignEnd: string | number | null | undefined,
+  nowMs: number | null,
 ) {
   const endMs = parseMerklUnix(latestCampaignEnd);
-  if (endMs == null) return null;
+  if (endMs == null || nowMs == null) return null;
   return Math.ceil((endMs - nowMs) / 86_400_000);
 }
 

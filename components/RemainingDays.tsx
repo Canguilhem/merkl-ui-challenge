@@ -1,22 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import {
   formatRemainingDays,
   remainingCampaignDays,
 } from "@/lib/format";
-
-function subscribe() {
-  return () => {};
-}
-
-function getNow() {
-  return Date.now();
-}
-
-function getServerNow() {
-  return 0;
-}
+import { useNow } from "@/lib/use-now";
 
 /** Client-only remaining-days label (avoids `Date.now()` during RSC prerender). */
 export function RemainingDays({
@@ -26,8 +14,7 @@ export function RemainingDays({
   end?: string | number | null;
   className?: string;
 }) {
-  const now = useSyncExternalStore(subscribe, getNow, getServerNow);
-  const days = remainingCampaignDays(end, now);
+  const days = remainingCampaignDays(end, useNow());
   return (
     <span className={className}>{formatRemainingDays(days)}</span>
   );
