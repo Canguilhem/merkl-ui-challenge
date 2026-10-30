@@ -1,69 +1,135 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { OpportunityFilters } from "@/components/OpportunityFilters";
+import { OpportunityList } from "@/components/OpportunityList";
+import { Pagination } from "@/components/Pagination";
+import { RequestInspector } from "@/components/RequestInspector";
+import { HomePageSkeleton } from "@/components/skeletons";
+import { getChains, getOpportunities } from "@/lib/merkl/client";
+import {
+  DEFAULT_ORDER,
+  DEFAULT_PAGE_SIZE,
+  normalizeUiSort,
+} from "@/lib/merkl/constants";
 
-export default function Home() {
+function first(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+async function OpportunityResults({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const filters = {
+    search: first(params.search),
+    chainId: first(params.chainId),
+    status: first(params.status) ?? "LIVE",
+    action: first(params.action),
+    minimumTvl: first(params.minimumTvl),
+    maximumTvl: first(params.maximumTvl),
+    minimumApr: first(params.minimumApr),
+    maximumApr: first(params.maximumApr),
+    minimumDailyRewards: first(params.minimumDailyRewards),
+    maximumDailyRewards: first(params.maximumDailyRewards),
+    asset: first(params.asset),
+    tokenTypes: first(params.tokenTypes),
+    sort: normalizeUiSort(first(params.sort)),
+    order: first(params.order) ?? DEFAULT_ORDER,
+    page: Number(first(params.page) ?? 0),
+    items: DEFAULT_PAGE_SIZE,
+  };
+
+  const [chains, result] = await Promise.all([
+    getChains(),
+    getOpportunities(filters),
+  ]);
+
+  const queryParams = {
+    search: filters.search,
+    chainId: filters.chainId,
+    status: filters.status,
+    action: filters.action,
+    minimumTvl: filters.minimumTvl,
+    maximumTvl: filters.maximumTvl,
+    minimumApr: filters.minimumApr,
+    maximumApr: filters.maximumApr,
+    minimumDailyRewards: filters.minimumDailyRewards,
+    maximumDailyRewards: filters.maximumDailyRewards,
+    asset: filters.asset,
+    tokenTypes: filters.tokenTypes,
+    sort: filters.sort,
+    order: filters.order,
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Opportunities
+        </h1>
+        <RequestInspector
+          localApiPath={result.meta.localApiPath}
+          upstreamUrl={result.meta.upstreamUrl}
+          count={result.meta.count}
+          sort={filters.sort}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+
+      <div className="mt-4">
+        <OpportunityFilters
+          chains={chains}
+          values={filters}
+          pagination={{
+            page: result.meta.page,
+            pageSize: result.meta.items,
+            count: result.meta.count,
+            params: queryParams,
+          }}
+        >
+          {result.data.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-card px-6 py-14 text-center">
+              <p className="font-medium text-foreground">
+                No opportunities found
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try widening filters or resetting the TVL range.
+              </p>
+            </div>
+          ) : (
+            <div className="min-h-[36rem] md:min-h-[44rem]">
+              <OpportunityList
+                data={result.data}
+                sort={filters.sort}
+                order={filters.order}
+              />
+            </div>
+          )}
+
+          <Pagination
+            page={result.meta.page}
+            pageSize={result.meta.items}
+            count={result.meta.count}
+            params={queryParams}
+            className="hidden md:flex"
+          />
+        </OpportunityFilters>
+      </div>
+    </>
+  );
+}
+
+export default function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  return (
+    <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+      <Suspense fallback={<HomePageSkeleton />}>
+        <OpportunityResults searchParams={searchParams} />
+      </Suspense>
+    </main>
   );
 }
